@@ -49,7 +49,7 @@ import { AddIcon } from "@chakra-ui/icons";
 interface IFormInput {
   name: string;
   description: string;
-  file?: FileList;
+  file?: File;
   inStock: number;
   price: number;
   discountedPrice: number;
@@ -201,7 +201,7 @@ export default function UpdateCard({
                   </label>
                 </Box>
 
-                <FileUpload accept={"image/*"} register={register("file")}>
+                <FileUpload accept={"image/*"} register={register("imageUrl")}>
                   <Button leftIcon={<Icon as={FiFile} />}>Upload Image</Button>
                 </FileUpload>
               </Flex>
