@@ -89,7 +89,7 @@ export default function Products({ category }: { category: Category }) {
         <IoMdAddCircle className=' text-4xl cursor-pointer'
           onClick={onOpen} />
       </div>
-      <> <AddProductModal isOpen={isOpen} onClose={onClose} onOpen={onOpen} sub={category} /></>
+      <> <AddProductModal isOpen={isOpen} onClose={onClose} sub={category} /></>
     </>
   )
 }
