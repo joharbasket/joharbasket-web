@@ -1,25 +1,40 @@
 //components/Orders/OrderDetailsCard.tsx
 
 import type { Product } from '@/lib/types'
-import { Image } from '@chakra-ui/react';
+import Image from 'next/image'
+import { Box, Flex, Text } from '@chakra-ui/react'
+
 type Props = {
     details: Product
 }
+
 const Card = ({ details }: Props) => {
     const { name, imageUrl, price, discountedPrice, nos } = details;
+
     return (
-        <div className='flex bg-white px-4 py-2 rounded-md'>
-            <Image src={imageUrl} alt={name} boxSize='150px'
-                objectFit='contain' />
-            <div className='flex flex-col'>
-                <div className='text-black font-bold'>
+        <Box className='flex bg-white shadow-md rounded-md p-4'>
+            <Image 
+                src={imageUrl} 
+                alt={name} 
+                width={150} 
+                height={150} 
+                objectFit='contain' 
+                className='rounded-md'
+            />
+            <Flex direction='column' justify='center' ml={4}>
+                <Text className='text-black font-bold' fontSize='lg'>
                     {name}
-                </div>
-                <div className=' text-green-500'>
+                </Text>
+                <Text className='text-green-500' fontSize='md'>
                     &#x20B9;{price} x {nos}
-                </div>
-            </div>
-        </div>
+                </Text>
+                {discountedPrice && (
+                    <Text className='text-red-500' fontSize='md' textDecoration='line-through'>
+                        &#x20B9;{discountedPrice}
+                    </Text>
+                )}
+            </Flex>
+        </Box>
     )
 }
 
