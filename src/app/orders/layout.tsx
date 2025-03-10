@@ -39,7 +39,7 @@ export default function RootLayout({
     const arr = getStringBetween(pathname)
     return (
         <div className=''>
-            <Navbar/>
+            {/* <Navbar/> */}
             <div className="my-2 w-full">
             <ul className="grid grid-flow-col text-center text-gray-500 bg-gray-100 rounded-full p-1 mx-4">
                 {
