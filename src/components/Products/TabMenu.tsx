@@ -46,13 +46,13 @@ const Tabmenu: React.FC = () => {
                 </main>
             )}
             {len === 3 && (
-                <div className="flex w-full justify-around items-center gap-5 mt-5">
-                    <Link
+                <div className="flex w-full justify-end items-center gap-5 mt-5">
+                    {/* <Link
                         className="hidden md:inline-block py-2 px-6 bg-johar-orange/85 hover:bg-johar-orange text-sm text-white font-bold rounded-xl transition duration-200"
                         href={'/products'}
                     >
                         Add New
-                    </Link>
+                    </Link> */}
                     <button onClick={onOpen} className='bg-white px-6 py-2 rounded-lg'>
                         <FcSearch className='text-3xl' />
                     </button>

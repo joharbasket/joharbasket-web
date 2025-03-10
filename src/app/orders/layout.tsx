@@ -5,6 +5,7 @@
 import { getStringBetween } from '@/lib/utils';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Navbar from '@/components/Navbar';
 
 
 enum SubSection {
@@ -37,7 +38,9 @@ export default function RootLayout({
     const router = useRouter()
     const arr = getStringBetween(pathname)
     return (
-        <div className="my-2 w-full">
+        <div className=''>
+            <Navbar/>
+            <div className="my-2 w-full">
             <ul className="grid grid-flow-col text-center text-gray-500 bg-gray-100 rounded-full p-1 mx-4">
                 {
                     tabs.map((tab, i) => {
@@ -65,6 +68,7 @@ export default function RootLayout({
             {sub === SubSection.PENDING && arr.length === 2 && pending}
             {sub === SubSection.NEW && arr.length === 2 && neworder}
 
+        </div>
         </div>
     );
 }
