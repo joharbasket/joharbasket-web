@@ -7,6 +7,9 @@ import { FiFile } from "react-icons/fi";
 import { FcHighPriority } from "react-icons/fc";
 import FileUpload from "../FileUpload";
 import axios from "axios";
+import { IoArrowBack } from "react-icons/io5";
+
+
 import {
   Modal,
   ModalOverlay,
@@ -45,6 +48,8 @@ import { getProduct } from "@/lib/features/products/productSlice";
 import { useAppSelector } from "@/lib/hooks";
 import { Product } from '@/lib/types';
 import { AddIcon } from "@chakra-ui/icons";
+
+
 
 interface IFormInput {
   name: string;
@@ -406,11 +411,14 @@ export default function UpdateCard({
 
   return (
     <>
+    <Button width="20" onClick={() => router.back()} className="ml-5">
+      <IoArrowBack/>
+    </Button>
       <Flex justify="center" align="center" height="80vh">
         <Flex
           direction="column"
           align="center"
-          bg="white"
+          bg="white"  
           rounded="3xl"
           p={6}
           boxShadow="lg"
