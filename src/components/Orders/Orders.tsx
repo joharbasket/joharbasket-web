@@ -1,4 +1,4 @@
-//components/Orders/Orders.tsx
+//components/Oreders/Orders.tsx
 
 "use client";
 import { OrderType } from '@/lib/constants';
@@ -11,7 +11,7 @@ import { parseISO, isWithinInterval, subDays, subHours } from 'date-fns';
 import { FcSearch } from "react-icons/fc";
 
 import type { Order } from '@/lib/features/orders/orderSlice';
-import { useDisclosure } from '@chakra-ui/react';
+import { useDisclosure, useInterval } from '@chakra-ui/react';
 import OrderSearch from '@/components/Orders/OrderSearch'
 import { useRouter } from 'next/navigation';
 export default function Orders({ orderType }: { orderType: OrderType }) {
@@ -23,17 +23,24 @@ export default function Orders({ orderType }: { orderType: OrderType }) {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchOrders = () => {
-      if (orderType === OrderType.PAST) {
-        dispatch(getPastOrders(user?.token));
+    if(orderType === OrderType.PAST) {
+      dispatch(getPastOrders(user?.token))
+    } else {
+      dispatch(getOrders(user?.token))
+
+    }
+    const interval = setInterval(() => {
+      if(orderType === OrderType.PAST) {
+        dispatch(getPastOrders(user?.token))
       } else {
-        dispatch(getOrders(user?.token));
+        dispatch(getOrders(user?.token))
+  
       }
-    };
-
-    fetchOrders();
-  }, [dispatch, user, orderType]);
-
+    }, 60000)
+    return () => {
+      clearTimeout(interval);
+    }
+  }, [dispatch, user, orderType])
   const [orders, setOrders] = useState<any[]>(data);
   const [range, setRange] = useState('all')
   useEffect(() => {
@@ -41,11 +48,15 @@ export default function Orders({ orderType }: { orderType: OrderType }) {
     let sevenDaysAgo = subDays(currentDate, 7);
     let twentyFourHoursAgo = subHours(currentDate, 24);
     const filtered = data!.filter((o) => {
-      let date = o?.orderTime ? (typeof o.orderTime === 'string' ? parseISO(o.orderTime) : o.orderTime) : new Date();
+      let date = new Date();
+      if (o?.orderTime) {
+        date = o?.orderTime;
+      }
       let c1 = true;
       if (range === 'today') {
         c1 = isWithinInterval(date, { start: twentyFourHoursAgo, end: currentDate });
       } else if (range === 'week') {
+
         c1 = isWithinInterval(date, { start: sevenDaysAgo, end: currentDate });
       }
       let c2 = true;
@@ -69,35 +80,34 @@ export default function Orders({ orderType }: { orderType: OrderType }) {
     }, 5000)
   }
   return (
-    <div className='flex flex-col mt-6 mx-4 gap-5 justify-center items-center'>
-      <div className='w-full flex justify-between items-center'>
-        <button onClick={onOpen} className='bg-white px-4 py-2 rounded-lg shadow-md flex items-center'>
-          <FcSearch className='mr-2' /> Search Orders
-        </button>
-        <select name="time-range" id="time-range" className='rounded-md min-w-max px-2 py-1' value={range} onChange={e => setRange(e.target.value)}>
+    <div className='flex flex-col mt-6 mx-4 gap-5 justify-center items-center '>
+      <div className='w-full justify-end flex gap-4 items-center'>
+        <div>  <button onClick={onOpen}
+          className=' bg-white px-4 py-2 rounded-lg'
+        > <FcSearch className='' /></button>
+          <OrderSearch onClose={onClose} onOpen={onOpen} isOpen={isOpen} sub={orders} /></div>
+        <label htmlFor="time-range" className='text-white font-bold text-md'></label>
+        <select name="time-range" id="time-range" className='rounded-md min-w-max px-2 py-1' value={range} onChange={e => {
+          setRange(e.target.value)
+        }}>
           <option value="all">All</option>
           <option value="today">Today</option>
           <option value="week">Past 7 days</option>
         </select>
       </div>
-      {loading ? (
-        <div className='mt-56'>
-          <Loading />
-        </div>
-      ) : (
-        <div className='grid grid-cols-1 gap-4 w-full'>
-          {orders.length > 0 ? (
-            orders.map((order) => (
-              <OrdersCard key={order?.orderId} details={order} />
-            ))
-          ) : (
-            <div>No orders found.</div>
-          )}
-        </div>
-      )}
-      <OrderSearch onClose={onClose} onOpen={onOpen} isOpen={isOpen} sub={orders} />
+      {
+        orders.length > 0 && (orders.map((v) => <OrdersCard key={v?.orderId} details={v} />))
+      }
+      {/* {
+        data!.length > 0 ? (data!.reduce((acc: any[], v) => {
+          if (v?.isAccepted === false && v.isDelivered === false) {
+            acc.push(<OrdersCard details={v} key={v.orderId} />)
+          }
+          return acc;
+        }, []
+        )) : <div className='w-full h-screen'><Loading /></div>
+      } */}
     </div>
+
   )
 }
-
-
