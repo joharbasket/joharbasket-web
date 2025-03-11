@@ -35,8 +35,9 @@ export default function OrderCard({ details }: { details: any }) {
     const orderTimeF = orderTime ? (isNaN(new Date(orderTime).getTime()) ? '' : format(new Date(orderTime), "PPp")) : '';
     const { isOpen, onOpen, onClose } = useDisclosure()
     const { isOpen: isOpenD, onOpen: onOpenD, onClose: onCloseD } = useDisclosure()
+
     return (
-        <div className='flex flex-col bg-white rounded-lg shadow-md p-4 mb-4'>
+        <div className='flex flex-col bg-white rounded-lg shadow-md p-4 mb-4 w-full'>
             <div className='flex justify-between items-start'>
                 <div className='flex flex-col'>
                     {isNew && <><div className='font-bold'>ORDER PLACED</div><div>{orderTimeF}</div></>}

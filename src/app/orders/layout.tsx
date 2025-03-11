@@ -40,7 +40,7 @@ export default function RootLayout({
     return (
         <div className=''>
             {/* <Navbar/> */}
-            <div className="my-2 w-full">
+            <div className="my-2 w-f">
             <ul className="grid grid-flow-col text-center text-gray-500 bg-gray-100 rounded-full p-1 mx-4">
                 {
                     tabs.map((tab, i) => {
