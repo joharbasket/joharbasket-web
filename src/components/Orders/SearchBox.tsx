@@ -6,6 +6,7 @@ import { useState,useEffect } from 'react';
 import { searchRegEx } from '@/lib/utils';
 import SmallProductCard from '../Products/SmallProductCard';
 import debounce from 'lodash/debounce';
+import Fuse from 'fuse.js'
 import {
   Modal,
   ModalOverlay,
@@ -22,6 +23,10 @@ export default function SearchBox({ isOpen, onClose, onOpen }: { isOpen: boolean
   const [inputVal, setInputVal] = useState<string>('');
   const [filteredProduct, setFilteredProduct] = useState<Product[]>([])
 
+const fuse = new Fuse(sub, {
+  keys: ['name', 'description', 'category', 'subCategory']
+})
+
 const debouncedSearch = debounce((query: string) => {
   if (query.length >= 2) {
     const filteredProduct = searchRegEx(query, sub);
@@ -29,7 +34,7 @@ const debouncedSearch = debounce((query: string) => {
   } else {
     setFilteredProduct([]);
   }
-}, 200); // Reduced from 300ms to 200ms for faster response
+}, 100); 
 
 const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const query = e.target.value;
