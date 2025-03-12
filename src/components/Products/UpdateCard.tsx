@@ -2,12 +2,13 @@
 
 "use client";
 import { Image } from "@chakra-ui/react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { FiFile } from "react-icons/fi";
 import { FcHighPriority } from "react-icons/fc";
 import FileUpload from "../FileUpload";
 import axios from "axios";
 import { IoArrowBack } from "react-icons/io5";
+import { ChevronDownIcon } from "@chakra-ui/icons";
 
 
 import {
@@ -94,6 +95,8 @@ export default function UpdateCard({
   const [categories, setCategories] = useState<Map<string, Set<string>>>(new Map());
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [showNewSubCategory, setShowNewSubCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [newSubCategory, setNewSubCategory] = useState("");
 
   useEffect(() => {
     dispatch(getProduct({ id, collection }));
@@ -104,6 +107,7 @@ export default function UpdateCard({
     const fetchCategories = async () => {
       try {
         const response = await axios.get(`/api/products/${collection}`);
+        console.log("API Response:", response.data); // Log the API response
         const products: Product[] = response.data;
         
         const categoryMap = new Map<string, Set<string>>();
@@ -119,6 +123,7 @@ export default function UpdateCard({
           }
         });
 
+        console.log("Category Map:", Array.from(categoryMap.entries())); // Log the category map
         setCategories(categoryMap);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -267,6 +272,13 @@ export default function UpdateCard({
                       <Select
                         {...register("category")}
                         placeholder="Select Category"
+                        onChange={(e) => {
+                          if (e.target.value === "new") {
+                            setShowNewCategory(true);
+                          } else {
+                            setValue("category", e.target.value);
+                          }
+                        }}
                       >
                         {Array.from(categories.keys()).map((cat) => (
                           <option key={cat} value={cat}>
@@ -279,18 +291,21 @@ export default function UpdateCard({
                       <InputGroup>
                         <Input
                           placeholder="Enter new category"
+                          value={newCategory}
                           onChange={(e) => {
+                            setNewCategory(e.target.value);
                             setValue("category", e.target.value);
-                            setShowNewCategory(false);
-                            categories.set(e.target.value, new Set());
                           }}
                         />
                         <InputRightElement>
                           <Button
                             size="sm"
-                            onClick={() => setShowNewCategory(false)}
+                            onClick={() => {
+                              setShowNewCategory(false);
+                              setNewCategory("");
+                            }}
                           >
-                            <AddIcon />
+                            <ChevronDownIcon />
                           </Button>
                         </InputRightElement>
                       </InputGroup>
@@ -306,6 +321,13 @@ export default function UpdateCard({
                         {...register("subCategory")}
                         placeholder="Select Subcategory"
                         isDisabled={!watchCategory}
+                        onChange={(e) => {
+                          if (e.target.value === "new") {
+                            setShowNewSubCategory(true);
+                          } else {
+                            setValue("subCategory", e.target.value);
+                          }
+                        }}
                       >
                         {watchCategory && Array.from(categories.get(watchCategory) || []).map((sub) => (
                           <option key={sub} value={sub}>
@@ -318,22 +340,21 @@ export default function UpdateCard({
                       <InputGroup>
                         <Input
                           placeholder="Enter new subcategory"
+                          value={newSubCategory}
                           onChange={(e) => {
+                            setNewSubCategory(e.target.value);
                             setValue("subCategory", e.target.value);
-                            setShowNewSubCategory(false);
-                            if (watchCategory) {
-                              const subCats = categories.get(watchCategory) || new Set();
-                              subCats.add(e.target.value);
-                              categories.set(watchCategory, subCats);
-                            }
                           }}
                         />
                         <InputRightElement>
                           <Button
                             size="sm"
-                            onClick={() => setShowNewSubCategory(false)}
+                            onClick={() => {
+                              setShowNewSubCategory(false);
+                              setNewSubCategory("");
+                            }}
                           >
-                            <AddIcon />
+                            <ChevronDownIcon />
                           </Button>
                         </InputRightElement>
                       </InputGroup>

@@ -50,7 +50,7 @@ export default function RootLayout({
                                 <div className="flex justify-center bg-johar-orange rounded-full shadow py-4 text-sm text-white font-bold mr-5 cursor-pointer"
                                     onClick={(e) => setSub(tab.href)}
                                 >{tab.name}</div>
-                            </li> : <li key={i}>
+                            </li> : <li key={i}>    
                                 <div className="flex justify-center py-4 text-sm text-gray-600 hover:text-gray-700 mr-5 cursor-pointer"
                                     onClick={(e) => {
                                         setSub(tab.href)
