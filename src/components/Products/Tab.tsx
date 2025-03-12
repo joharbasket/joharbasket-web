@@ -2,13 +2,14 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
+// import SubcategoryFetcher from "../SubCategoryFetch";
 
 export default function Tab({
   subs,
   subcategory,
   setSubcategory,
 }: {
-  subs: any[];
+  subs: any[]; // Array of categories
   subcategory: string;
   setSubcategory: any;
 }) {
@@ -16,6 +17,7 @@ export default function Tab({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categoryName, setCategoryName] = useState("");
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<any[]>([]); // State to hold subcategories
 
   const handleAddCategory = () => {
     if (!categoryName || !categoryImage) {
@@ -32,6 +34,31 @@ export default function Tab({
     setIsModalOpen(false);
   };
 
+  const handleCategoryClick = (sub: any, index: number) => {
+    console.log("Selected Category:", sub); // Log the selected category
+    setSubcategory(sub.name);
+    setActiveIndex(index);
+    
+    // Check if subcategories exist
+    if (sub.subcategories) {
+      setSelectedSubcategories(sub.subcategories); // Set the subcategories for the selected category
+    } else {
+      console.warn("No subcategories found for:", sub.name);
+      setSelectedSubcategories([]); // Clear subcategories if none exist
+    }
+  };
+
+  // const testSubs = [
+  //   {
+  //     name: "Test Category",
+  //     image: "/path/to/test-image.png",
+  //     subcategories: [
+  //       { name: "Test Subcategory 1", image: "/path/to/test-subcat1.png" },
+  //       { name: "Test Subcategory 2", image: "/path/to/test-subcat2.png" },
+  //     ],
+  //   },
+  // ];
+
   return (
     <div className="my-3 py-3 px-5 flex flex-row gap-1 flex-wrap">
       <div
@@ -42,6 +69,7 @@ export default function Tab({
         onClick={() => {
           setSubcategory("all");
           setActiveIndex(-1);
+          setSelectedSubcategories([]); // Clear subcategories when "All" is clicked
         }}
       >
         All
@@ -53,10 +81,7 @@ export default function Tab({
                       hover:bg-green-600 hover:text-white rounded 
                       transition-all duration-200 ease-in cursor-pointer
                       ${activeIndex === i ? "bg-green-600 text-white rounded-xl" : "bg-gray-400 text-green-700"}`}
-          onClick={() => {
-            setSubcategory(sub.name);
-            setActiveIndex(i);
-          }}
+          onClick={() => handleCategoryClick(sub, i)} // Handle category click
         >
           <Image
             src={sub.image || "/placeholder.png"}
@@ -69,6 +94,9 @@ export default function Tab({
           {sub.name}
         </div>
       ))}
+
+      {/* <SubcategoryFetcher category="Snacks & Munchies" /> */}
+
       <button
         className="flex justify-center items-center p-2 w-40 h-16 bg-black text-white
                     hover:bg-gray-600 hover:text-white rounded-3xl 
@@ -111,6 +139,25 @@ export default function Tab({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Display Subcategories */}
+      {selectedSubcategories.length > 0 && (
+        <div className="mt-4 flex flex-col gap-2">
+          {selectedSubcategories.map((subcat, index) => (
+            <div key={index} className="flex items-center p-2 bg-gray-300 rounded">
+              <Image
+                src={subcat.image || "/placeholder.png"}
+                alt={subcat.name}
+                height={30}
+                width={30}
+                quality={90}
+                className="object-cover rounded mr-2"
+              />
+              <span>{subcat.name}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
