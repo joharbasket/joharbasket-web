@@ -27,12 +27,12 @@ const page = () => {
         </div>
 
         {/* Call */}
-        {/* <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center">
           <Phone className="text-teal-700 w-10 h-10" />
           <h3 className="font-bold text-lg mt-3">Call Us</h3>
           <p className="text-gray-800 mt-1">Need immediate assistance? Call us at</p>
-          <p className="font-bold text-black">+91 99291 56240</p>
-        </div> */}
+          <p className="font-bold text-black">+91 9258917455</p>
+        </div>
 
         {/* Visit */}
         <div className="flex flex-col items-center">
