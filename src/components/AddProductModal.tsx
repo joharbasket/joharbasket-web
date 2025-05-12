@@ -89,7 +89,7 @@ function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
         
         if (formRef.current) {
             const formData = new FormData(formRef.current);
-            
+                        
             formData.set("collection", selectedCollection);
             formData.set("category", selectedCategory);
             formData.set("subCategory", selectedSubcategory);

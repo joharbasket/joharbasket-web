@@ -11,6 +11,8 @@ type InitialStateType = {
     pooja: ProductSub[];
     stationary: ProductSub[];
     notifications: Notification[];
+    loading: boolean;
+    error: string | null;
 }
 const initialState : InitialStateType= {
   notifications: [],
@@ -18,6 +20,8 @@ const initialState : InitialStateType= {
   grocery: [],
   pooja: [],
   stationary: [],
+  loading: false,
+  error: null,
 };
 
 const getSubcategories = createAsyncThunk(
@@ -28,7 +32,7 @@ const getSubcategories = createAsyncThunk(
       return data;
     } catch (error: any) {
       console.log("Errorsss");
-      return thunkAPI.rejectWithValue();
+      return thunkAPI.rejectWithValue(error.message);
     }
   }
 );
@@ -38,14 +42,20 @@ export const subcategoriesSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers : (builder : any) =>{
+    builder.addCase(getSubcategories.pending, (state : any) =>{
+        state.loading = true;
+        state.error = null;
+    });
     builder.addCase(getSubcategories.fulfilled, (state : any, action : any)=>{
         const subcat = action.meta.arg;
         const data = action.payload.subcategories;
         state[subcat] = data;
-    
+        state.loading = false;
     });
     builder.addCase(getSubcategories.rejected, (state : any, action : any)=>{
-        console.log(action)
+        state.loading = false;
+        state.error = action.payload;
+        console.log(action);
     });
   }
  
