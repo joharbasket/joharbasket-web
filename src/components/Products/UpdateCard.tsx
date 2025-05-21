@@ -91,47 +91,64 @@ export default function UpdateCard({
   const pathname = usePathname();
   const dispatch = useAppDispatch();
   const single = useAppSelector((state) => state.productReducer.single);
-  const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
+  const { grocery, cosmetics, stationary, pooja } = useAppSelector(state => state.productReducer);
+  const [selectedCollection, setSelectedCollection] = useState<string>(collection);
   const [categories, setCategories] = useState<Map<string, Set<string>>>(new Map());
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [showNewSubCategory, setShowNewSubCategory] = useState(false);
   const [newCategory, setNewCategory] = useState("");
   const [newSubCategory, setNewSubCategory] = useState("");
+  const collections = ["grocery", "cosmetics", "pooja", "stationary"];
 
   useEffect(() => {
     dispatch(getProduct({ id, collection }));
   }, [dispatch, id, collection]);
 
-  // Extract unique categories and subcategories from products
+  // Update categories and subcategories when collection changes
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get(`/api/products/${collection}`);
-        console.log("API Response:", response.data); // Log the API response
-        const products: Product[] = response.data;
-        
-        const categoryMap = new Map<string, Set<string>>();
-        
-        products.forEach((product) => {
-          if (product.category) {
-            if (!categoryMap.has(product.category)) {
-              categoryMap.set(product.category, new Set());
-            }
-            if (product.subCategory) {
-              categoryMap.get(product.category)?.add(product.subCategory);
-            }
-          }
-        });
+    let products: Product[] = [];
+    switch (selectedCollection) {
+      case 'grocery':
+        products = grocery;
+        break;
+      case 'cosmetics':
+        products = cosmetics;
+        break;
+      case 'stationary':
+        products = stationary;
+        break;
+      case 'pooja':
+        products = pooja;
+        break;
+    }
 
-        console.log("Category Map:", Array.from(categoryMap.entries())); // Log the category map
-        setCategories(categoryMap);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
+    // Create category and subcategory map with unique values
+    const categoryMap = new Map<string, Set<string>>();
+    const uniqueCategories = new Set<string>();
+    const uniqueSubcategories = new Map<string, Set<string>>();
+
+    products.forEach((product) => {
+      if (product.category) {
+        uniqueCategories.add(product.category);
+        
+        if (!uniqueSubcategories.has(product.category)) {
+          uniqueSubcategories.set(product.category, new Set());
+        }
+        
+        if (product.subCategory) {
+          uniqueSubcategories.get(product.category)?.add(product.subCategory);
+        }
       }
-    };
+    });
 
-    fetchCategories();
-  }, [collection]);
+    // Convert Sets to sorted arrays for consistent ordering
+    uniqueCategories.forEach(category => {
+      const subcats = Array.from(uniqueSubcategories.get(category) || []);
+      categoryMap.set(category, new Set(subcats));
+    });
+
+    setCategories(categoryMap);
+  }, [selectedCollection, grocery, cosmetics, stationary, pooja]);
 
   const UpdateForm = () => {
     const {
@@ -277,14 +294,18 @@ export default function UpdateCard({
                             setShowNewCategory(true);
                           } else {
                             setValue("category", e.target.value);
+                            // Reset subcategory when category changes
+                            setValue("subCategory", "");
                           }
                         }}
                       >
-                        {Array.from(categories.keys()).map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
+                        {Array.from(categories.keys())
+                          .sort((a, b) => a.localeCompare(b))
+                          .map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
                         <option value="new">+ Add New Category</option>
                       </Select>
                     ) : (
@@ -293,8 +314,9 @@ export default function UpdateCard({
                           placeholder="Enter new category"
                           value={newCategory}
                           onChange={(e) => {
-                            setNewCategory(e.target.value);
-                            setValue("category", e.target.value);
+                            const value = e.target.value.trim();
+                            setNewCategory(value);
+                            setValue("category", value);
                           }}
                         />
                         <InputRightElement>
@@ -329,11 +351,15 @@ export default function UpdateCard({
                           }
                         }}
                       >
-                        {watchCategory && Array.from(categories.get(watchCategory) || []).map((sub) => (
-                          <option key={sub} value={sub}>
-                            {sub}
-                          </option>
-                        ))}
+                        {watchCategory && 
+                          Array.from(categories.get(watchCategory) || [])
+                            .sort((a, b) => a.localeCompare(b))
+                            .map((sub) => (
+                              <option key={sub} value={sub}>
+                                {sub}
+                              </option>
+                            ))
+                        }
                         <option value="new">+ Add New Subcategory</option>
                       </Select>
                     ) : (
@@ -342,8 +368,9 @@ export default function UpdateCard({
                           placeholder="Enter new subcategory"
                           value={newSubCategory}
                           onChange={(e) => {
-                            setNewSubCategory(e.target.value);
-                            setValue("subCategory", e.target.value);
+                            const value = e.target.value.trim();
+                            setNewSubCategory(value);
+                            setValue("subCategory", value);
                           }}
                         />
                         <InputRightElement>
@@ -366,17 +393,22 @@ export default function UpdateCard({
                   <label>Move to Collection</label>
                   <Select
                     placeholder={collection.charAt(0).toUpperCase() + collection.slice(1)}
-                    value={selectedCollection || ""}
-                    onChange={(e) => setSelectedCollection(e.target.value)}
+                    value={selectedCollection}
+                    onChange={(e) => {
+                      setSelectedCollection(e.target.value);
+                      setNewCategory("");
+                      setNewSubCategory("");
+                      setValue("category", "");
+                      setValue("subCategory", "");
+                    }}
                   >
-                    {["grocery", "cosmetics", "pooja", "stationary"]
-                      .filter(cat => cat !== collection)
-                      .map(cat => (
+                    {collections
+                      .sort((a, b) => a.localeCompare(b))
+                      .map((cat) => (
                         <option key={cat} value={cat}>
                           {cat.charAt(0).toUpperCase() + cat.slice(1)}
                         </option>
-                      ))
-                    }
+                      ))}
                   </Select>
                 </FormControl>
 

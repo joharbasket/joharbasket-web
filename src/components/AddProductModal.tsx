@@ -39,14 +39,14 @@ function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
     const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [showNewSubCategory, setShowNewSubCategory] = useState(false);
-    const [selectedCollection, setSelectedCollection] = useState<string>("");
+    const [selectedCollection, setSelectedCollection] = useState<string>(sub);
     const collections = ["grocery", "cosmetics", "pooja", "stationary"];
 
-    // Fetch all products and extract categories/subcategories
+    // Fetch categories and subcategories when collection changes
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await axios.get(`/api/products/${sub}`);
+                const response = await axios.get(`/api/products/${selectedCollection}`);
                 const products: Product[] = response.data;
                 
                 const categoryMap = new Map<string, Set<string>>();
@@ -63,13 +63,16 @@ function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
                 });
 
                 setCategories(categoryMap);
+                // Reset selections when collection changes
+                setSelectedCategory("");
+                setSelectedSubcategory("");
             } catch (error) {
                 console.error("Error fetching categories:", error);
             }
         };
 
         fetchCategories();
-    }, [sub]);
+    }, [selectedCollection]);
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

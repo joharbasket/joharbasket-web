@@ -1,6 +1,67 @@
 import "server-only";
 import { initAdmin } from "./firebaseAdminSdk";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { AllCategories, MainCategoryData, Subcategory, SubSubcategory, FirebaseSubcategoryData, MainCategoryWithSubcategories } from '../types/categories';
+
+export async function fetchAllCategoriesData2(): Promise<AllCategories> {
+  await initAdmin();
+  const db = getFirestore();
+  const allCategoriesData: AllCategories = {};
+
+  try {
+    const mainCategoriesSnapshot = await db.collection("Subcategories").get();
+
+    for (const mainCategoryDoc of mainCategoriesSnapshot.docs) {
+      const mainCategoryId = mainCategoryDoc.id;
+      const mainCategoryData = mainCategoryDoc.data();
+
+      allCategoriesData[mainCategoryId] = {
+        name: mainCategoryId,
+        subcategories: []
+      };
+
+      const subcollections = await mainCategoryDoc.ref.listCollections();
+      
+      for (const subcollection of subcollections) {
+        const subcategoryName = subcollection.id;
+        
+        const subcategoryDoc = await subcollection.doc(subcategoryName).get();
+        
+        if (subcategoryDoc.exists) {
+          const subcategoryData = subcategoryDoc.data();
+          
+          if (subcategoryData) {
+            const subcategory: Subcategory = {
+              name: subcategoryName,
+              image: subcategoryData.image || '',
+              subSubcategories: []
+            };
+
+            if (subcategoryData.subSubcategories && Array.isArray(subcategoryData.subSubcategories)) {
+              subcategory.subSubcategories = subcategoryData.subSubcategories
+                .filter((item: any) => 
+                  item && 
+                  typeof item.name === 'string' && 
+                  typeof item.image === 'string'
+                )
+                .map((item: any) => ({
+                  name: item.name,
+                  image: item.image
+                }));
+            }
+
+            allCategoriesData[mainCategoryId].subcategories.push(subcategory);
+          }
+        }
+      }
+    }
+
+    return allCategoriesData;
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    throw error;
+  }
+}
 import { getStorage } from "firebase-admin/storage";
 import { getMessaging } from "firebase-admin/messaging";
 import { getDocs, collection } from "firebase/firestore";
@@ -251,17 +312,19 @@ export async function getDocWithId(_id: string) {
 export async function getAllProduct() {
   await initAdmin();
   const firestore = getFirestore();
-  const collections = ["grocery", "stationary", "cosmetics"];
+  const collections = ["grocery", "stationary", "cosmetics", "pooja"];
   const snapshots = await Promise.all(
     collections.map((collectionName) =>
       firestore.collection(collectionName).get()
     )
   );
   const results: any[] = [];
-  snapshots.map((snap) => {
-    const currRef = snap.docs;
-    currRef.forEach((d) => {
-      results.push(d.data());
+  snapshots.forEach((snap) => {
+    snap.docs.forEach((doc) => {
+      results.push({
+        ...doc.data(),
+        collection: collections[snapshots.indexOf(snap)]
+      });
     });
   });
   return results;
@@ -922,6 +985,79 @@ export const fetchSubcategories = async (sub: string) => {
   return data;
 }
 
+export async function fetchAllCategoriesData(): Promise<AllCategories> {
+  await initAdmin();
+  const db = getFirestore();
+  const allCategoriesData: AllCategories = {};
+
+  const mainCategoriesSnapshot = await db.collection("Subcategories").get();
+
+  for (const mainCategoryDoc of mainCategoriesSnapshot.docs) {
+    const mainCategoryId = mainCategoryDoc.id;
+    const mainCategoryRawData = mainCategoryDoc.data();
+
+    if (!mainCategoryRawData.subcategories || !Array.isArray(mainCategoryRawData.subcategories)) {
+      console.warn(`Main category ${mainCategoryId} is missing subcategories array or it's not an array.`);
+      allCategoriesData[mainCategoryId] = {
+        name: mainCategoryId, 
+        subcategories: [],
+      };
+      continue;
+    }
+
+    const fetchedSubcategories: Subcategory[] = [];
+
+    for (const subcatRef of mainCategoryRawData.subcategories) {
+      if (!subcatRef.name || typeof subcatRef.name !== 'string') {
+        console.warn(`Invalid subcategory item in ${mainCategoryId}:`, subcatRef);
+        continue;
+      }
+      const subcategoryName = subcatRef.name;
+      const subcategoryImage = subcatRef.image || '';
+
+      let subSubcategories: SubSubcategory[] = [];
+
+      try {
+        const subSubcategoryDocRef = db
+          .collection("Subcategories")
+          .doc(mainCategoryId)
+          .collection(subcategoryName) 
+          .doc(subcategoryName);        
+
+        const subSubcategoryDocSnap = await subSubcategoryDocRef.get();
+
+        if (subSubcategoryDocSnap.exists) {
+          const subSubData = subSubcategoryDocSnap.data();
+          if (subSubData && subSubData.subSubcategories && Array.isArray(subSubData.subSubcategories)) {
+            subSubcategories = subSubData.subSubcategories.filter(
+              (sss: any) => sss.name && typeof sss.name === 'string' && sss.image && typeof sss.image === 'string'
+            ).map((sss: any) => ({ name: sss.name, image: sss.image }));
+          } else {
+            console.warn(`Document ${subSubcategoryDocRef.path} exists but missing valid subSubcategories array.`);
+          }
+        } else {
+          // console.log(`No sub-subcategories document found at ${subSubcategoryDocRef.path}`);
+        }
+      } catch (error) {
+        console.error(`Error fetching sub-subcategories for ${mainCategoryId}/${subcategoryName}:`, error);
+      }
+
+      fetchedSubcategories.push({
+        name: subcategoryName,
+        image: subcategoryImage,
+        subSubcategories: subSubcategories.length > 0 ? subSubcategories : undefined,
+      });
+    }
+
+    allCategoriesData[mainCategoryId] = {
+      name: mainCategoryId, 
+      subcategories: fetchedSubcategories,
+    };
+  }
+
+  return allCategoriesData;
+}
+
 // export const fetchAllSubcategories = async () => {
 //   await initAdmin();
 //   const db = getFirestore();
@@ -1033,3 +1169,109 @@ export const deleteCoupon = async(id : string) =>{
 //   }
 //   return false;
 // };
+
+// Types already imported at the top of the file
+
+/**
+ * Fetches a specific main category document and all documents from its 'subcategories' subcollection.
+ * Uses 'subCategories' as the main collection name and 'subcategories' for the nested subcollection.
+ * @param mainCategoryDocId The ID of the main category document to fetch (e.g., "cosmetics").
+ * @returns A Promise that resolves to the main category data with its subcategories, or null if not found.
+ */
+export const fetchMainCategoryWithSubcategories = async (
+  mainCategoryDocId: string
+): Promise<MainCategoryWithSubcategories | null> => {
+  await initAdmin();
+  const db = getFirestore();
+
+  try {
+    // Fetch main category document
+    const mainCategoryRef = db.collection("subCategories").doc(mainCategoryDocId);
+    const mainCategorySnap = await mainCategoryRef.get();
+
+    if (!mainCategorySnap.exists) {
+      console.log(`Main category document with ID "${mainCategoryDocId}" not found.`);
+      return null;
+    }
+
+    const mainCategoryData = mainCategorySnap.data() as MainCategoryData;
+
+    // Fetch 'subcategories' subcollection
+    const subcategoriesRef = mainCategoryRef.collection("subcategories");
+    const subcategoriesSnap = await subcategoriesRef.get();
+
+    const subcategoriesData: FirebaseSubcategoryData[] = [];
+
+    for (const doc of subcategoriesSnap.docs) {
+      const subcategoryData = doc.data();
+      const subSubcategoriesRef = doc.ref.collection('subSubcategories');
+      const subSubcategoriesSnap = await subSubcategoriesRef.get();
+
+      const subSubcategories: SubSubcategory[] = subSubcategoriesSnap.docs.map(subDoc => ({
+        name: subDoc.data().name,
+        image: subDoc.data().image
+      }));
+
+      subcategoriesData.push({
+        id: doc.id,
+        name: subcategoryData.name,
+        description: subcategoryData.description,
+        image: subcategoryData.image,
+        subSubcategories
+      } as FirebaseSubcategoryData);
+    }
+
+    console.log(`Fetched main category "${mainCategoryDocId}" with ${subcategoriesData.length} subcategories.`);
+
+    return {
+      ...mainCategoryData,
+      id: mainCategorySnap.id,
+      subcategoriesData
+    } as MainCategoryWithSubcategories;
+
+  } catch (error) {
+    console.error(`Error fetching main category "${mainCategoryDocId}" with subcategories:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Fetches all main categories and their subcategories in a hierarchical structure.
+ * @returns A Promise that resolves to an object containing all categories and their data.
+ */
+export const fetchAllCategories = async (): Promise<AllCategories> => {
+  await initAdmin();
+  const db = getFirestore();
+
+  try {
+    const mainCategoriesRef = db.collection("subCategories");
+    const mainCategoriesSnap = await mainCategoriesRef.get();
+    const allCategories: AllCategories = {};
+
+    for (const mainCategoryDoc of mainCategoriesSnap.docs) {
+      const mainCategoryId = mainCategoryDoc.id;
+      const mainCategoryWithSubs = await fetchMainCategoryWithSubcategories(mainCategoryId);
+
+      if (mainCategoryWithSubs) {
+        const { subcategoriesData, ...mainCategoryData } = mainCategoryWithSubs;
+        
+        // Convert FirebaseSubcategoryData to Subcategory format
+        const subcategories: Subcategory[] = subcategoriesData.map(subcat => ({
+          name: subcat.name,
+          image: subcat.image,
+          subSubcategories: subcat.subSubcategories
+        }));
+
+        allCategories[mainCategoryId] = {
+          name: mainCategoryData.name,
+          subcategories
+        };
+      }
+    }
+
+    return allCategories;
+  } catch (error) {
+    console.error('Error fetching all categories:', error);
+    throw error;
+  }
+};

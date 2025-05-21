@@ -18,7 +18,7 @@ const links = [
 	},
 	{
 		name: "Products",
-		href: "/products/grocery"
+		href: "/products"
 	},
 	{
 		name: "Orders",
