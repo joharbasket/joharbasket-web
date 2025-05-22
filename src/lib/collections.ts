@@ -1,3 +1,5 @@
+//collection data
+
 export interface subCategory {
   name: string;
 }
