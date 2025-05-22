@@ -26,7 +26,7 @@ import {
 
 import { useRouter } from "next/navigation";
 import { Product } from "@/lib/types";
-import { CollectionData, Collection, category, subCategory } from "@/app/products/page";
+import { CollectionData, Collection, category, subCategory } from "@/lib/collections";
 
 function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
     const toast = useToast()

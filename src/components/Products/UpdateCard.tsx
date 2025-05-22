@@ -48,7 +48,7 @@ import { useAppDispatch } from "@/lib/store";
 import { getProduct } from "@/lib/features/products/productSlice";
 import { useAppSelector } from "@/lib/hooks";
 import { Product } from '@/lib/types';
-import { CollectionData, Collection, category, subCategory } from "@/app/products/page";
+import { CollectionData, Collection, category, subCategory } from "@/lib/collections";
 
 interface IFormInput {
   name: string;

@@ -17,7 +17,7 @@ import { notFound } from 'next/navigation';
 import { getSubcategories } from '@/lib/features/subcategories';
 import { Product } from '@/lib/types';
 import Tab from './Tab';
-import { CollectionData, Collection } from '@/app/products/page';
+import { CollectionData, Collection } from '@/lib/collections';
 
 type Category = "pooja" | "cosmetics" | "grocery" | "stationary";
 
