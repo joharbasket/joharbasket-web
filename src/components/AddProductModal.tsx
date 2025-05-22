@@ -26,6 +26,7 @@ import {
 
 import { useRouter } from "next/navigation";
 import { Product } from "@/lib/types";
+import { CollectionData, Collection, category, subCategory } from "@/app/products/page";
 
 function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
     const toast = useToast()
@@ -34,42 +35,14 @@ function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
     const [file, setFile] = useState<File | null>(null);
     const formRef = useRef<HTMLFormElement>(null)
     const [stock, setStock] = useState<number>(0);
-    const [categories, setCategories] = useState<Map<string, Set<string>>>(new Map());
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [showNewSubCategory, setShowNewSubCategory] = useState(false);
-    const [selectedCollection, setSelectedCollection] = useState<string>("");
-    const collections = ["grocery", "cosmetics", "pooja", "stationary"];
+    const [selectedCollection, setSelectedCollection] = useState<string>(sub);
 
-    // Fetch all products and extract categories/subcategories
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const response = await axios.get(`/api/products/${sub}`);
-                const products: Product[] = response.data;
-                
-                const categoryMap = new Map<string, Set<string>>();
-                
-                products.forEach((product) => {
-                    if (product.category) {
-                        if (!categoryMap.has(product.category)) {
-                            categoryMap.set(product.category, new Set());
-                        }
-                        if (product.subCategory) {
-                            categoryMap.get(product.category)?.add(product.subCategory);
-                        }
-                    }
-                });
-
-                setCategories(categoryMap);
-            } catch (error) {
-                console.error("Error fetching categories:", error);
-            }
-        };
-
-        fetchCategories();
-    }, [sub]);
+    // Get current collection data
+    const currentCollection = CollectionData.find(col => col.name.toLowerCase() === selectedCollection.toLowerCase());
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -194,9 +167,9 @@ function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
                                             setSelectedSubcategory("");
                                         }}
                                     >
-                                        {collections.map((col) => (
-                                            <option key={col} value={col}>
-                                                {col.charAt(0).toUpperCase() + col.slice(1)}
+                                        {CollectionData.map((col: Collection) => (
+                                            <option key={col.name} value={col.name.toLowerCase()}>
+                                                {col.name}
                                             </option>
                                         ))}
                                     </Select>
@@ -220,9 +193,9 @@ function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
                                                     }
                                                 }}
                                             >
-                                                {Array.from(categories.keys()).map((cat) => (
-                                                    <option key={cat} value={cat}>
-                                                        {cat}
+                                                {currentCollection?.categories.map((cat: category) => (
+                                                    <option key={cat.name} value={cat.name}>
+                                                        {cat.name}
                                                     </option>
                                                 ))}
                                                 <option value="new">+ Add New Category</option>
@@ -232,14 +205,7 @@ function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
                                                 <Input
                                                     name="category"
                                                     placeholder="Enter new category"
-                                                    onChange={(e) => {
-                                                        setSelectedCategory(e.target.value);
-                                                        setCategories(prev => {
-                                                            const updated = new Map(prev);
-                                                            updated.set(e.target.value, new Set());
-                                                            return updated;
-                                                        });
-                                                    }}
+                                                    onChange={(e) => setSelectedCategory(e.target.value)}
                                                 />
                                                 <InputRightElement width="4.5rem">
                                                     <Button
@@ -282,11 +248,13 @@ function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
                                                 }}
                                             >
                                                 {selectedCategory && 
-                                                    Array.from(categories.get(selectedCategory) || []).map((sub) => (
-                                                        <option key={sub} value={sub}>
-                                                            {sub}
-                                                        </option>
-                                                    ))
+                                                    currentCollection?.categories
+                                                        .find(cat => cat.name === selectedCategory)
+                                                        ?.subCategories.map((sub: subCategory) => (
+                                                            <option key={sub.name} value={sub.name}>
+                                                                {sub.name}
+                                                            </option>
+                                                        ))
                                                 }
                                                 <option value="new">+ Add New Subcategory</option>
                                             </Select>
@@ -295,18 +263,7 @@ function ProductForm({ sub, onClose }: { sub: string, onClose: () => void }) {
                                                 <Input
                                                     name="subCategory"
                                                     placeholder="Enter new subcategory"
-                                                    onChange={(e) => {
-                                                        setSelectedSubcategory(e.target.value);
-                                                        if (selectedCategory) {
-                                                            setCategories(prev => {
-                                                                const updated = new Map(prev);
-                                                                const subCats = updated.get(selectedCategory) || new Set();
-                                                                subCats.add(e.target.value);
-                                                                updated.set(selectedCategory, subCats);
-                                                                return updated;
-                                                            });
-                                                        }
-                                                    }}
+                                                    onChange={(e) => setSelectedSubcategory(e.target.value)}
                                                 />
                                                 <InputRightElement width="4.5rem">
                                                     <Button

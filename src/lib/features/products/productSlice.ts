@@ -8,6 +8,7 @@ const initialState: {
   grocery: Product[];
   cosmetics: Product[];
   stationary: Product[];
+  pooja: Product[];
   single: Product | null;
   sub: Product[];
 } = {
@@ -17,6 +18,7 @@ const initialState: {
   grocery: [],
   cosmetics: [],
   stationary: [],
+  pooja: [],
   single: null,
   sub: [],
 };
@@ -80,6 +82,30 @@ const fetchProductsInitial = createAsyncThunk(
   }
 );
 
+const fetchAllCollections = createAsyncThunk(
+  "/api/products/all-collections",
+  async (_, _thunkAPI) => {
+    try {
+      const collections = ["grocery", "cosmetics", "stationary", "pooja"];
+      const promises = collections.map(collection => 
+        axios.get(`/api/products/${collection}`)
+      );
+      const results = await Promise.all(promises);
+      
+      const data = {
+        grocery: results[0].data,
+        cosmetics: results[1].data,
+        stationary: results[2].data,
+        pooja: results[3].data
+      };
+      
+      return data;
+    } catch (error: any) {
+      console.log("Error fetching all collections:", error);
+      _thunkAPI.rejectWithValue(error);
+    }
+  }
+);
 
 export const productSlice = createSlice({
   name: "products",
@@ -135,7 +161,20 @@ export const productSlice = createSlice({
     builder.addCase(fetchProductsFrom.rejected, (state: any, action: any) => {
       console.log(action.error.message);
     });
+    builder.addCase(fetchAllCollections.pending, (state: typeof initialState) => {
+      state.loading = true;
+    });
+    builder.addCase(fetchAllCollections.fulfilled, (state: typeof initialState, action: { payload: { grocery: Product[], cosmetics: Product[], stationary: Product[], pooja: Product[] } }) => {
+      state.loading = false;
+      state.grocery = action.payload.grocery;
+      state.cosmetics = action.payload.cosmetics;
+      state.stationary = action.payload.stationary;
+      state.pooja = action.payload.pooja;
+    });
+    builder.addCase(fetchAllCollections.rejected, (state: typeof initialState) => {
+      state.loading = false;
+    });
   },
 });
-export { getProduct, fetchProductsFrom, fetchProductsInitial };
+export { getProduct, fetchAllProducts, fetchProductsFrom, fetchProductsInitial, fetchAllCollections };
 export default productSlice.reducer;
