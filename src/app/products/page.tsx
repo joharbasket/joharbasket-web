@@ -6,7 +6,6 @@ import { fetchAllCollections } from '@/lib/features/products/productSlice';
 import { Product } from '@/lib/types';
 import Card from '@/components/Card';
 import Loading from '@/components/Loading';
-import { useRouter } from 'next/navigation';
 import { Button } from '@chakra-ui/react';
 import { AddIcon } from '@chakra-ui/icons';
 import AddProductModal from '@/components/AddProductModal';
@@ -16,7 +15,6 @@ import { CollectionData, Collection, category, subCategory } from '@/lib/collect
 type Category = "pooja" | "cosmetics" | "grocery" | "stationary";
 
 export default function ProductsPage() {
-  const router = useRouter();
   const dispatch = useAppDispatch();
   const { loading, grocery, cosmetics, stationary, pooja } = useAppSelector(state => state.productReducer);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -26,60 +24,14 @@ export default function ProductsPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Map<string, Set<string>>>(new Map());
+
+  // Get current collection data
+  const currentCollection = CollectionData.find(col => col.name.toLowerCase() === selectedCollection.toLowerCase());
 
   // Load all collections
   useEffect(() => {
     dispatch(fetchAllCollections());
   }, [dispatch]);
-
-  // Update categories and subcategories when collection changes
-  useEffect(() => {
-    let products: Product[] = [];
-    switch (selectedCollection) {
-      case 'grocery':
-        products = grocery;
-        break;
-      case 'cosmetics':
-        products = cosmetics;
-        break;
-      case 'stationary':
-        products = stationary;
-        break;
-      case 'pooja':
-        products = pooja;
-        break;
-    }
-
-    // Create category and subcategory map with unique values
-    const categoryMap = new Map<string, Set<string>>();
-    const uniqueCategories = new Set<string>();
-    const uniqueSubcategories = new Map<string, Set<string>>();
-
-    products.forEach((product) => {
-      if (product.category) {
-        uniqueCategories.add(product.category);
-        
-        if (!uniqueSubcategories.has(product.category)) {
-          uniqueSubcategories.set(product.category, new Set());
-        }
-        
-        if (product.subCategory) {
-          uniqueSubcategories.get(product.category)?.add(product.subCategory);
-        }
-      }
-    });
-
-    // Convert Sets to sorted arrays for consistent ordering
-    uniqueCategories.forEach(category => {
-      const subcats = Array.from(uniqueSubcategories.get(category) || []);
-      categoryMap.set(category, new Set(subcats));
-    });
-
-    setCategories(categoryMap);
-    setSelectedCategory("all");
-    setSelectedSubcategory("all");
-  }, [selectedCollection, grocery, cosmetics, stationary, pooja]);
 
   // Filter products based on selections
   useEffect(() => {
@@ -171,10 +123,11 @@ export default function ProductsPage() {
             }}
             className="px-4 py-2 border rounded-md min-w-[200px]"
           >
-            <option value="grocery">Grocery</option>
-            <option value="cosmetics">Cosmetics</option>
-            <option value="stationary">Stationary</option>
-            <option value="pooja">Pooja</option>
+            {CollectionData.map((col: Collection) => (
+              <option key={col.name} value={col.name.toLowerCase()}>
+                {col.name}
+              </option>
+            ))}
           </select>
 
           {/* Category Dropdown */}
@@ -187,13 +140,11 @@ export default function ProductsPage() {
             className="px-4 py-2 border rounded-md min-w-[200px]"
           >
             <option value="all">All Categories</option>
-            {Array.from(categories.keys())
-              .sort((a, b) => a.localeCompare(b))
-              .map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
+            {currentCollection?.categories.map((cat: category) => (
+              <option key={cat.name} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
           </select>
 
           {/* Subcategory Dropdown */}
@@ -205,13 +156,14 @@ export default function ProductsPage() {
           >
             <option value="all">All Subcategories</option>
             {selectedCategory !== "all" &&
-              Array.from(categories.get(selectedCategory) || [])
-                .sort((a, b) => a.localeCompare(b))
-                .map((subcategory) => (
-                  <option key={subcategory} value={subcategory}>
-                    {subcategory}
+              currentCollection?.categories
+                .find(cat => cat.name === selectedCategory)
+                ?.subCategories.map((sub: subCategory) => (
+                  <option key={sub.name} value={sub.name}>
+                    {sub.name}
                   </option>
-                ))}
+                ))
+            }
           </select>
         </div>
       </div>
