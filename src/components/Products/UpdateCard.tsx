@@ -2,14 +2,14 @@
 
 "use client";
 import { Image } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FiFile } from "react-icons/fi";
 import { FcHighPriority } from "react-icons/fc";
 import FileUpload from "../FileUpload";
 import axios from "axios";
 import { IoArrowBack } from "react-icons/io5";
-import { ChevronDownIcon } from "@chakra-ui/icons";
-
+import { ChevronDownIcon, AddIcon } from "@chakra-ui/icons";
+import { TiDelete } from "react-icons/ti";
 
 import {
   Modal,
@@ -48,9 +48,7 @@ import { useAppDispatch } from "@/lib/store";
 import { getProduct } from "@/lib/features/products/productSlice";
 import { useAppSelector } from "@/lib/hooks";
 import { Product } from '@/lib/types';
-import { AddIcon } from "@chakra-ui/icons";
-
-
+import { CollectionData, Collection, category, subCategory } from "@/app/products/page";
 
 interface IFormInput {
   name: string;
@@ -93,62 +91,23 @@ export default function UpdateCard({
   const single = useAppSelector((state) => state.productReducer.single);
   const { grocery, cosmetics, stationary, pooja } = useAppSelector(state => state.productReducer);
   const [selectedCollection, setSelectedCollection] = useState<string>(collection);
-  const [categories, setCategories] = useState<Map<string, Set<string>>>(new Map());
+  const [file, setFile] = useState<File | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [stock, setStock] = useState<number>(0);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [showNewSubCategory, setShowNewSubCategory] = useState(false);
   const [newCategory, setNewCategory] = useState("");
   const [newSubCategory, setNewSubCategory] = useState("");
   const collections = ["grocery", "cosmetics", "pooja", "stationary"];
 
+  // Get current collection data
+  const currentCollection = CollectionData.find(col => col.name.toLowerCase() === selectedCollection.toLowerCase());
+
   useEffect(() => {
     dispatch(getProduct({ id, collection }));
   }, [dispatch, id, collection]);
-
-  // Update categories and subcategories when collection changes
-  useEffect(() => {
-    let products: Product[] = [];
-    switch (selectedCollection) {
-      case 'grocery':
-        products = grocery;
-        break;
-      case 'cosmetics':
-        products = cosmetics;
-        break;
-      case 'stationary':
-        products = stationary;
-        break;
-      case 'pooja':
-        products = pooja;
-        break;
-    }
-
-    // Create category and subcategory map with unique values
-    const categoryMap = new Map<string, Set<string>>();
-    const uniqueCategories = new Set<string>();
-    const uniqueSubcategories = new Map<string, Set<string>>();
-
-    products.forEach((product) => {
-      if (product.category) {
-        uniqueCategories.add(product.category);
-        
-        if (!uniqueSubcategories.has(product.category)) {
-          uniqueSubcategories.set(product.category, new Set());
-        }
-        
-        if (product.subCategory) {
-          uniqueSubcategories.get(product.category)?.add(product.subCategory);
-        }
-      }
-    });
-
-    // Convert Sets to sorted arrays for consistent ordering
-    uniqueCategories.forEach(category => {
-      const subcats = Array.from(uniqueSubcategories.get(category) || []);
-      categoryMap.set(category, new Set(subcats));
-    });
-
-    setCategories(categoryMap);
-  }, [selectedCollection, grocery, cosmetics, stationary, pooja]);
 
   const UpdateForm = () => {
     const {
@@ -204,7 +163,7 @@ export default function UpdateCard({
     };
 
     return (
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)} ref={formRef}>
         <ModalBody>
           <Flex direction={["column", "row"]} gap={6}>
             {/* Left Column */}
@@ -237,6 +196,139 @@ export default function UpdateCard({
             {/* Right Column */}
             <Box flex="2">
               <Flex direction="column" gap={4}>
+                {/* Collection Selection */}
+                <FormControl isRequired>
+                  <label>Collection</label>
+                  <Select
+                    name="collection"
+                    placeholder="Select Collection"
+                    value={selectedCollection}
+                    onChange={(e) => {
+                      setSelectedCollection(e.target.value);
+                      setSelectedCategory("");
+                      setSelectedSubcategory("");
+                    }}
+                  >
+                    {CollectionData.map((col: Collection) => (
+                      <option key={col.name} value={col.name.toLowerCase()}>
+                        {col.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                {/* Category Selection */}
+                <FormControl isRequired>
+                  <label>Category</label>
+                  <Flex gap={2}>
+                    {!showNewCategory ? (
+                      <Select
+                        name="category"
+                        placeholder="Select Category"
+                        value={selectedCategory}
+                        onChange={(e) => {
+                          if (e.target.value === "new") {
+                            setShowNewCategory(true);
+                          } else {
+                            setSelectedCategory(e.target.value);
+                            setSelectedSubcategory("");
+                          }
+                        }}
+                      >
+                        {currentCollection?.categories.map((cat: category) => (
+                          <option key={cat.name} value={cat.name}>
+                            {cat.name}
+                          </option>
+                        ))}
+                        <option value="new">+ Add New Category</option>
+                      </Select>
+                    ) : (
+                      <InputGroup>
+                        <Input
+                          name="category"
+                          placeholder="Enter new category"
+                          onChange={(e) => setSelectedCategory(e.target.value)}
+                        />
+                        <InputRightElement width="4.5rem">
+                          <Button
+                            h="1.75rem"
+                            size="sm"
+                            onClick={() => setShowNewCategory(false)}
+                            mr="2rem"
+                          >
+                            <AddIcon />
+                          </Button>
+                          <Button
+                            h="1.75rem"
+                            size="sm"
+                            onClick={() => setShowNewCategory(false)}
+                          >
+                            <ChevronDownIcon />
+                          </Button>
+                        </InputRightElement>
+                      </InputGroup>
+                    )}
+                  </Flex>
+                </FormControl>
+
+                {/* Subcategory Selection */}
+                <FormControl isRequired>
+                  <label>Subcategory</label>
+                  <Flex gap={2}>
+                    {!showNewSubCategory ? (
+                      <Select
+                        name="subCategory"
+                        placeholder="Select Subcategory"
+                        value={selectedSubcategory}
+                        isDisabled={!selectedCategory}
+                        onChange={(e) => {
+                          if (e.target.value === "new") {
+                            setShowNewSubCategory(true);
+                          } else {
+                            setSelectedSubcategory(e.target.value);
+                          }
+                        }}
+                      >
+                        {selectedCategory && 
+                          currentCollection?.categories
+                            .find(cat => cat.name === selectedCategory)
+                            ?.subCategories.map((sub: subCategory) => (
+                              <option key={sub.name} value={sub.name}>
+                                {sub.name}
+                              </option>
+                            ))
+                        }
+                        <option value="new">+ Add New Subcategory</option>
+                      </Select>
+                    ) : (
+                      <InputGroup>
+                        <Input
+                          name="subCategory"
+                          placeholder="Enter new subcategory"
+                          onChange={(e) => setSelectedSubcategory(e.target.value)}
+                        />
+                        <InputRightElement width="4.5rem">
+                          <Button
+                            h="1.75rem"
+                            size="sm"
+                            onClick={() => setShowNewSubCategory(false)}
+                            mr="2rem"
+                          >
+                            <AddIcon />
+                          </Button>
+                          <Button
+                            h="1.75rem"
+                            size="sm"
+                            onClick={() => setShowNewSubCategory(false)}
+                          >
+                            <ChevronDownIcon />
+                          </Button>
+                        </InputRightElement>
+                      </InputGroup>
+                    )}
+                  </Flex>
+                </FormControl>
+
                 <FormControl>
                   <label>Name</label>
                   <input
@@ -280,136 +372,6 @@ export default function UpdateCard({
                       <NumberDecrementStepper />
                     </NumberInputStepper>
                   </NumberInput>
-                </FormControl>
-
-                <FormControl>
-                  <label>Category</label>
-                  <Flex gap={2}>
-                    {!showNewCategory ? (
-                      <Select
-                        {...register("category")}
-                        placeholder="Select Category"
-                        onChange={(e) => {
-                          if (e.target.value === "new") {
-                            setShowNewCategory(true);
-                          } else {
-                            setValue("category", e.target.value);
-                            // Reset subcategory when category changes
-                            setValue("subCategory", "");
-                          }
-                        }}
-                      >
-                        {Array.from(categories.keys())
-                          .sort((a, b) => a.localeCompare(b))
-                          .map((cat) => (
-                            <option key={cat} value={cat}>
-                              {cat}
-                            </option>
-                          ))}
-                        <option value="new">+ Add New Category</option>
-                      </Select>
-                    ) : (
-                      <InputGroup>
-                        <Input
-                          placeholder="Enter new category"
-                          value={newCategory}
-                          onChange={(e) => {
-                            const value = e.target.value.trim();
-                            setNewCategory(value);
-                            setValue("category", value);
-                          }}
-                        />
-                        <InputRightElement>
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setShowNewCategory(false);
-                              setNewCategory("");
-                            }}
-                          >
-                            <ChevronDownIcon />
-                          </Button>
-                        </InputRightElement>
-                      </InputGroup>
-                    )}
-                  </Flex>
-                </FormControl>
-
-                <FormControl>
-                  <label>Subcategory</label>
-                  <Flex gap={2}>
-                    {!showNewSubCategory ? (
-                      <Select
-                        {...register("subCategory")}
-                        placeholder="Select Subcategory"
-                        isDisabled={!watchCategory}
-                        onChange={(e) => {
-                          if (e.target.value === "new") {
-                            setShowNewSubCategory(true);
-                          } else {
-                            setValue("subCategory", e.target.value);
-                          }
-                        }}
-                      >
-                        {watchCategory && 
-                          Array.from(categories.get(watchCategory) || [])
-                            .sort((a, b) => a.localeCompare(b))
-                            .map((sub) => (
-                              <option key={sub} value={sub}>
-                                {sub}
-                              </option>
-                            ))
-                        }
-                        <option value="new">+ Add New Subcategory</option>
-                      </Select>
-                    ) : (
-                      <InputGroup>
-                        <Input
-                          placeholder="Enter new subcategory"
-                          value={newSubCategory}
-                          onChange={(e) => {
-                            const value = e.target.value.trim();
-                            setNewSubCategory(value);
-                            setValue("subCategory", value);
-                          }}
-                        />
-                        <InputRightElement>
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setShowNewSubCategory(false);
-                              setNewSubCategory("");
-                            }}
-                          >
-                            <ChevronDownIcon />
-                          </Button>
-                        </InputRightElement>
-                      </InputGroup>
-                    )}
-                  </Flex>
-                </FormControl>
-
-                <FormControl>
-                  <label>Move to Collection</label>
-                  <Select
-                    placeholder={collection.charAt(0).toUpperCase() + collection.slice(1)}
-                    value={selectedCollection}
-                    onChange={(e) => {
-                      setSelectedCollection(e.target.value);
-                      setNewCategory("");
-                      setNewSubCategory("");
-                      setValue("category", "");
-                      setValue("subCategory", "");
-                    }}
-                  >
-                    {collections
-                      .sort((a, b) => a.localeCompare(b))
-                      .map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                        </option>
-                      ))}
-                  </Select>
                 </FormControl>
 
                 <FormControl>

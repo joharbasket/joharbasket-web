@@ -17,7 +17,10 @@ import { notFound } from 'next/navigation';
 import { getSubcategories } from '@/lib/features/subcategories';
 import { Product } from '@/lib/types';
 import Tab from './Tab';
+import { CollectionData, Collection } from '@/app/products/page';
+
 type Category = "pooja" | "cosmetics" | "grocery" | "stationary";
+
 export default function Products({ category }: { category: Category }) {
   const user = useAppSelector(state => state.authReducer.user);
   const { loading, grocery, cosmetics, stationary, pooja } = useAppSelector(state => state.productReducer)
@@ -27,9 +30,11 @@ export default function Products({ category }: { category: Category }) {
   const [subcategory, setSubcategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCollection, setSelectedCollection] = useState<Category>(category);
-  const subs = useAppSelector(state => state.subcategoriesReducers[category]);
   const [filtered, setFiltered] = useState<Product[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+
+  // Get current collection data
+  const currentCollection = CollectionData.find(col => col.name.toLowerCase() === selectedCollection.toLowerCase());
 
   // Load all collections at once when component mounts
   useEffect(() => {
@@ -170,10 +175,11 @@ export default function Products({ category }: { category: Category }) {
                 onChange={(e) => setSelectedCollection(e.target.value as Category)}
                 className="px-4 py-2 border rounded-md"
               >
-                <option value="grocery">Grocery</option>
-                <option value="cosmetics">Cosmetics</option>
-                <option value="stationary">Stationary</option>
-                <option value="pooja">Pooja</option>
+                {CollectionData.map((col: Collection) => (
+                  <option key={col.name} value={col.name.toLowerCase()}>
+                    {col.name}
+                  </option>
+                ))}
               </select>
 
               <input
@@ -186,7 +192,11 @@ export default function Products({ category }: { category: Category }) {
             </div>
           </div>
 
-          <Tab subs={subs} subcategory={subcategory} setSubcategory={setSubcategory}/>
+          <Tab 
+            subs={currentCollection?.categories.flatMap(cat => cat.subCategories) || []} 
+            subcategory={subcategory} 
+            setSubcategory={setSubcategory}
+          />
 
           <div className='flex flex-row gap-10 mb-10'>
             <button
