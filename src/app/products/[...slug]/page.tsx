@@ -1,3 +1,6 @@
+//product page
+
+
 import UpdateCard from '@/components/Products/UpdateCard';
 import Products from '@/components/Products/Products';
 import { capitalizeFirstLetter } from "@/lib/utils"
