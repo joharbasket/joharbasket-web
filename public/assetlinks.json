@@ -1,0 +1,16 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.johar.basketpvt",
+      "sha256_cert_fingerprints": [
+        "2a:9e:9f:02:23:68:6f:7e:73:0b:e6:d9:b0:ed:e1:66:61:6d:8f:bd:0e:22:43:89:82:d3:9f:50:73:e9:ca:d6",
+        "f1:2e:41:e8:db:ac:cf:b6:f3:ee:bc:14:ec:f1:5e:ef:1f:95:90:ab:96:98:ee:21:1a:a4:d8:ff:b7:58:af:9c",
+        "df:be:ff:50:a1:d6:ed:f9:99:37:42:23:40:ba:25:16:a6:6a:1a:08:e5:22:90:4c:8b:23:ef:64:24:5e:67:de",
+        "8c:bb:e9:25:fa:54:be:45:e0:50:84:11:2c:6a:f5:7a:6d:13:27:8d:7e:d1:4c:0b:bb:3e:bf:1f:a8:f2:26:a2",
+        "5f:58:b4:f2:71:67:58:14:a5:1e:79:24:0c:40:b7:67:ef:bf:9f:0f:6f:26:6c:3b:a0:b2:21:61:c9:76:bd:df"
+      ]
+    }
+  }
+]
