@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "com.johar.basketpvt",
       "sha256_cert_fingerprints": [
-        "F1:2E:41:E8:DB:AC:CF:B6:F3:EE:BC:14:EC:F1:5E:EF:1F:95:90:AB:96:98:EE:21:1A:A4:D8:FF:B7:58:AF:9C"
+        "F1:2E:41:E8:DB:AC:CF:B6:F3:EE:BC:14:EC:F1:5E:EF:1F:95:90:AB:96:98:EE:21:1A:A4:D8:FF:B7:58:AF:9C",
+        "2A:9E:9F:02:23:68:6F:7E:73:0B:E6:D9:B0:ED:E1:66:61:6D:8F:BD:0E:22:43:89:82:D3:9F:50:73:E9:CA:D6"
       ]
     }
   }
